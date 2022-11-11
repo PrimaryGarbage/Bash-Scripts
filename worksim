@@ -1,0 +1,121 @@
+#!/bin/bash
+
+chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+action=""
+filename=""
+progress=0
+progress_delta=0
+action_completed=0
+space="                                                                                                                                "
+delay=0
+progress_bar_length=40
+right_padding=2
+max_progress=800
+progress_bar_div=$((max_progress/progress_bar_length))
+max_progress_delta=40
+extension=""
+
+generate_action() {
+	number=$(shuf -i 1-5 -n 1)
+	case $number in
+		1)
+			action="Compiling source file"
+			extension=".cs"
+			;;
+		2)	
+			action="Downloading package"
+			extension=".7z"
+			;;
+		3)	
+			action="Linking object file"
+			extension=".o"
+			;;
+		4)	
+			action="Resolving dependencies on package"
+			extension=".pkg"
+			;;
+		5)	
+			action="Unpacking package"
+			extension=".7z"
+			;;
+	esac
+}
+
+generate_filename() {
+	length=$(shuf -i 4-20 -n 1);
+	filename=""
+	for ((i = 0; i < $length; ++i)); 
+	do
+		filename+=${chars:RANDOM%${#chars}:1}
+	done
+	filename+=$extension
+}
+
+increment_progress() {
+	progress_delta=$(shuf -i 0-$max_progress_delta -n 1)
+	progress=$((progress+progress_delta))
+}
+
+print_progress() {
+	progress_div=$((progress/progress_bar_div))
+	progress_bar="["
+	for ((i=0;i<$progress_div;i++))
+	do
+		progress_bar="$progress_bar#"
+	done
+	for ((i=$progress_div;i<$progress_bar_length;i++))
+	do
+		progress_bar="$progress_bar."
+	done
+	progress_bar="$progress_bar]"
+	echo -n "$progress_bar"
+}
+
+execute_action() {
+	generate_action
+	generate_filename
+	try_print_warning_message $filename
+	left_part="\r$action: \"$filename\""
+	left_part_length=${#left_part}
+	space_length=$(($(tput cols)-left_part_length-progress_bar_length-right_padding))
+	while [[ $progress -le $max_progress ]]
+	do
+		printf "$left_part %-${space_length}s"
+		print_progress
+		sleep $delay
+		increment_progress
+	done
+	progress=$max_progress
+	printf "$left_part %-${space_length}s"
+	print_progress
+	progress=0
+	echo
+}
+
+try_print_warning_message() {
+	number=$(shuf -i 1-50 -n 1)
+	case $number in
+		1)
+			echo "WARNING: file '$1' has some of it's dependencies obsolete. Continuing..."
+			;;
+		2)	
+			echo "WARNING: file '$1' is already present in the output directory. Rewriting..."
+			;;
+		3)	
+			echo "WARNING: corrupted file: '$1'"
+			;;
+		4)	
+			echo "WARNING: Version timestamp is absent in file: '$1'"
+			;;
+		*)	
+			;;
+	esac
+	
+}
+
+### body ###
+clear
+while true
+do
+	execute_action
+done
