@@ -16,6 +16,8 @@ max_progress_delta=40
 meta_max_progress_delta=$max_progress
 meta_min_progress_delta=10
 extension=""
+work_time=10
+
 
 generate_action() {
 	number=$(shuf -i 1-5 -n 1)
@@ -126,7 +128,17 @@ try_print_warning_message() {
 
 ### body ###
 clear
-while true
+
+if [[ $# -gt 0 ]]; then 
+	work_time=$1 
+fi
+start_time=$(date +%s)
+run_time=$start_time
+
+while [[ $((run_time-start_time)) -lt $work_time ]]
 do
+	run_time=$(date +%s)
 	execute_action
 done
+
+echo "Done."
